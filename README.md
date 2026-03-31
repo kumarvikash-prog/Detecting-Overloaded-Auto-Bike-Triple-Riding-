@@ -1,154 +1,108 @@
-# Triple Riding Detection (Overloaded Bike Detection) using Classical Computer Vision
+# 🛵 Catching Overloaded Bikes: A Beginner-Friendly Computer Vision Project
 
-## Problem Statement
+## What does this project do?
 
-Triple riding on two-wheelers is a common traffic violation in India and increases accident risk. Manual monitoring is limited, so this project proposes a simple image-based detection approach to flag potential triple riding cases for traffic monitoring, enforcement support, and road-safety awareness.
+In many parts of the world, riding a two-wheeler (like a motorcycle or scooter) with more than two people is a dangerous traffic violation—often called "triple riding" or "overloading."
 
-A beginner-friendly Computer Vision project to estimate how many riders are on a bike and flag potential triple riding.
+This project acts as an automatic traffic observer! You give it a picture of a bike, and it will:
+1. **Look** for the people sitting on the vehicle.
+2. **Count** how many people there are.
+3. **Decide** if there is a violation: returning "Normal Riding" (1 or 2 people) or raising an alarm like "Triple Riding Detected" or "Severely Overloaded" (for 4+ people).
 
-This project uses only classical CV techniques:
+---
 
-- OpenCV
-- NumPy
-- Rule-based contour filtering
+## How does it work? (Explained for Beginners!)
 
-## Project Structure
+You don't need a math degree or an Artificial Intelligence background to understand this. Here is the step-by-step "magic" happening behind the scenes, explained in simple English:
 
-```text
-.
-|-- input/              # input images
-|-- output/             # output images
-|-- main.py             # main execution script
-|-- detector.py         # all detection logic
-|-- utils.py            # helper functions
-|-- README.md           # project explanation
-|-- REPORT.md           # implementation report and file summary
-|-- requirements.txt    # dependencies
-```
+### Step 1: Making the Image Easy to Read (Preprocessing)
+First, the computer strips away all the colors from the image (making it black and white) and adjusts the lighting contrast. This makes it much easier for the computer to focus on important shapes and shadows without getting confused by bright, colorful clothes or neon signs.
 
-## Objective
+### Step 2: The "Face Hunt" (Detection)
+Instead of trying to find whole human bodies—which is very difficult when people are squeezed together on a small scooter—we look for **faces**! 
 
-Given an input image:
+We use an old-school but highly effective tool called a **Haar Cascade**. Think of it as a transparent stencil that the computer slides across the image. It looks for a specific pattern of light and dark pixels that usually make up two eyes, a nose, and a mouth. We use two different stencils:
+- One for **front-facing** people.
+- One for **side-facing** people (a profile).
 
-1. Detect upper-body/head-like blobs in the top half of the scene.
-2. Count the number of valid detected people.
-3. Classify:
-   - `count > 2` -> **Triple Riding Detected**
-   - otherwise -> **Normal Riding**
+### Step 3: Throwing Away Mistakes (Filtering)
+Sometimes, a pattern on a plaid shirt, a cluster of leaves, or a person sitting in a car in the background might accidentally match our "face stencil." We use simple, clever rules to throw out these mistakes:
+- **The Size Rule:** If a "face" is way too tiny (like a pebble) or way too huge (taking up the whole screen), it's probably a mistake. We ignore it.
+- **The Location Rule (Region of Interest):** People sitting on a bike will almost always have their heads in the **top half** of the picture. So, we tell the computer to completely ignore any "faces" it finds near the wheels, legs, or the road!
 
-## Pipeline (Step-by-Step)
+### Step 4: From Faces to Bodies (Expansion)
+Once we are confident we have found a face, we can make a very safe guess about where the rest of the person's upper body is! The code automatically draws a larger rectangle that starts at the face and expands downward to cover the person's chest and shoulders.
 
-1. Input handling
-   - Load image from `input/` folder (or via `--image` argument)
-   - Resize image to `640x480`
+### Step 5: Counting and Deciding
+Finally, we carefully count the number of body rectangles we drew.
+- **1 or 2 rectangles:** We print "**Normal Riding (2 People)**" in bright green.
+- **3 rectangles:** We print "**Triple Riding Detected**" in warning red.
+- **4 or more rectangles:** We print "**Severely Overloaded**" in warning red.
 
-2. Preprocessing
-   - Convert to grayscale
-   - Apply Gaussian blur `(5, 5)`
+---
 
-3. Edge detection
-   - Apply Canny edge detection with thresholds `(50, 150)`
+## How to Use This Project?
 
-4. Morphological operations
-   - Dilation to connect broken edges
-   - Closing to fill gaps
-   - Kernel size `(5, 5)`
+### 1. What You Need (Installation)
+You just need Python installed on your computer, along with two very common libraries: `opencv-python` (which handles the image processing) and `numpy`. 
 
-5. Region of interest
-   - Process only top `50%` of image to reduce road/wheel noise
+Here is how you can set it up on your specific operating system:
 
-6. Contour detection
-   - `cv2.findContours` with external contours only (`cv2.RETR_EXTERNAL`)
+#### 🪟 For Windows Users
+1. **Install Python:** Download and install Python from [python.org](https://www.python.org/downloads/). *(Important: Make sure to check the box that says "Add Python to PATH" during installation!)*
+2. **Open Command Prompt:** Press the Windows key, type `cmd`, and press Enter.
+3. **Navigate to the project:** Use the `cd` (change directory) command to go to the folder where you saved this project. For example:
+   ```cmd
+   cd C:\Users\YourName\Downloads\Detecting-Overloaded-Auto-Bike
+   ```
+4. **Install the libraries:** Run this command:
+   ```cmd
+   pip install -r requirements.txt
+   ```
 
-7. Contour filtering
-   - Keep contour if:
-     - `500 <= area <= 5000`
-     - `0.5 < aspect_ratio < 1.5`
+#### 🍎 For Mac Users
+1. **Open Terminal:** Press `Command + Space`, type `Terminal`, and hit Enter.
+2. **Navigate to the project:** Use the `cd` command to go to the folder where you saved this project. For example:
+   ```bash
+   cd ~/Downloads/Detecting-Overloaded-Auto-Bike
+   ```
+3. **Install the libraries:** Mac usually uses `pip3`. Run this command:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
 
-8. Counting and decision
-   - Valid contours are treated as detected people
-   - If people count is greater than `2`, classify as triple riding
+#### 🐧 For Linux Users
+1. **Open Terminal:** Press `Ctrl + Alt + T`.
+2. **Navigate to the project:** Use the `cd` command to go to the folder where you saved this project:
+   ```bash
+   cd ~/Downloads/Detecting-Overloaded-Auto-Bike
+   ```
+3. **Install the libraries:** Run this command:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
 
-9. Visualization
-   - Draw bounding boxes over valid blobs
-   - Draw ROI divider line
-   - Overlay rider count and status
-   - Save result in `output/`
+### 2. Running the Tool
+Now that everything is installed, you are ready to play with the code!
 
-## Installation
+1. **Add your pictures:** Drop any test pictures of bikes you want to check into the `input/` folder.
+2. **Run the magic command:** In your Command Prompt or Terminal, type the following:
+   - On **Windows**, run: `python main.py`
+   - On **Mac or Linux**, run: `python3 main.py`
 
-Run from repository root:
+The program will process all the images in the input folder and save the final results inside the `output/` folder! If you open those result images, you will see bright green boxes drawn over the riders and the total count written clearly in the corner.
 
-```bash
-pip install -r requirements.txt
-```
+---
 
-## How To Run
+## Limitations (When might it get confused?)
+No system is perfect, especially simple ones! Here are a few real-world things that might trick the detector:
+- **Full-Face Helmets:** If a rider is wearing a dark, fully-closed helmet with the visor down, the "face stencil" won't be able to see their eyes and nose, so they might not be counted.
+- **Looking Away:** If someone has their back completely turned to the camera, the computer can't see their face to count them.
+- **Very Blurry Images:** If the picture is taken at high speed on a bumpy road, the shapes become too smudged for the computer to recognize the "face" pattern.
 
-1. Put your test image in `input/`.
-2. Run:
+---
 
-```bash
-python main.py
-```
+## A Note for Absolute Beginners
+This project does *not* use heavy, complicated "Deep Learning" or massive "AI Neural Networks" that require expensive computers and graphics cards. 
 
-### Useful CLI options
-
-```bash
-python main.py --image bike.jpg
-python main.py --image /full/path/to/image.jpg
-python main.py --output-name result1.jpg
-python main.py --save-intermediate
-python main.py --show
-```
-
-## Example Outputs
-
-- Final annotated image: `output/result.jpg`
-- If `--save-intermediate` is used:
-  - `output/01_gray.jpg`
-  - `output/02_edges.jpg`
-  - `output/03_morphed.jpg`
-  - `output/04_roi_top50.jpg`
-
-## Limitations
-
-- This is a rule-based method, so results depend on lighting, camera angle, and image quality.
-- False positives can occur when background objects resemble rider blobs.
-- Heavy occlusion may merge riders into fewer contours.
-- Thresholds (`area`, `aspect ratio`, Canny values) may require tuning for different scenes.
-
-## Notes for Beginners
-
-- Start with clear side-view bike images.
-- Use `--save-intermediate` to understand each processing stage.
-- Tune `DetectorConfig` in `detector.py` to improve robustness on your data.
-
-## Constraint Compliance
-
-- No deep learning models used.
-- No pre-trained person detector used.
-- Only classical computer vision operations are used.
-
-## Why This Approach Works
-
-This project uses classical computer vision (not deep learning) based on practical visual cues:
-
-- Rider heads and upper bodies often create detectable edge contours.
-- Processing only the top half of the image removes road and wheel noise.
-- Dilation and closing convert broken edges into more complete blobs.
-- Contour filtering (area + aspect ratio) helps keep human-like regions.
-
-The system estimates rider count by detecting geometric patterns that approximate human presence.
-
-## Results and Observations
-
-On multiple test images, the pipeline works well for clear side-view bike scenes with visible rider separation. ROI-based filtering and morphological operations noticeably improve detection quality and reduce irrelevant detections.
-
-Common failure cases:
-
-- Overlapping riders may merge into one contour (undercounting).
-- Similar-shaped background objects can cause false positives.
-- Low-light or blurry images weaken edge detection.
-
-Overall, this method provides a useful classical CV baseline, though it is less robust than learning-based systems.
+Instead, it uses **"Classical Computer Vision"**—which basically means we are using smart, lightweight pixel math and logical rules. It’s light, fast, and a perfect first step into the amazing world of teaching computers how to see!
